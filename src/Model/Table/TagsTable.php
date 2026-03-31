@@ -22,7 +22,7 @@ class TagsTable extends Table
         $this->setPrimaryKey('id');
 
         // 🔥 CORRETO: Relacionamento com flashcard_tags
-        $this->hasMany('FlashcardTags', [
+        $this->hasMany('flashcard_tags', [
             'foreignKey' => 'tag_id',
         ]);
     }

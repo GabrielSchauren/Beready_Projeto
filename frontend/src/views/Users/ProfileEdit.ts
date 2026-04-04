@@ -2,15 +2,19 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useForm } from '@/composables/useForm'
 import { usePasswordStrength } from '@/composables/usePasswordStrength'
+import { usePhoneMask } from '@/composables/usePhoneMask'
+import { useAlert } from '@/composables/useAlert'
 
 export function useProfileEdit() {
   const router = useRouter()
+  const { success, error } = useAlert()
   const loading = ref(false)
   const showPassword = ref(false)
   const showConfirmPassword = ref(false)
 
   const { strengthClass, strengthText, strengthWidth, checkPasswordStrength } =
     usePasswordStrength()
+  const { handlePhoneInput, phoneError } = usePhoneMask()
 
   const { form, errors, validate } = useForm({
     id: '',
@@ -29,18 +33,6 @@ export function useProfileEdit() {
     if (!form.nova_senha && !form.confirmar_senha) return true
     return form.nova_senha === form.confirmar_senha
   })
-
-  const formatTelefone = (e: Event) => {
-    const target = e.target as HTMLInputElement
-    let value = target.value.replace(/\D/g, '')
-    if (value.length <= 11) {
-      if (value.length <= 2) value = value.replace(/^(\d{0,2})/, '($1')
-      else if (value.length <= 7) value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2')
-      else if (value.length <= 11) value = value.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
-      target.value = value
-      form.telefone = value
-    }
-  }
 
   const checkPasswordMatch = () => {}
 
@@ -64,16 +56,29 @@ export function useProfileEdit() {
   }
 
   const handleSubmit = async () => {
-    if (form.nova_senha && form.nova_senha !== form.confirmar_senha) {
-      alert('As senhas não coincidem')
-      return
+    // Validar telefone se foi alterado
+    if (form.telefone) {
+      const digits = form.telefone.replace(/\D/g, '')
+      if (digits.length > 0 && digits.length < 10) {
+        error('Telefone deve ter pelo menos 10 dígitos')
+        return
+      }
     }
-    if (form.nova_senha && form.nova_senha.length < 6) {
-      alert('A senha deve ter pelo menos 6 caracteres')
-      return
+
+    // Validar senha se foi preenchida
+    if (form.nova_senha) {
+      if (form.nova_senha.length < 6) {
+        error('A nova senha deve ter pelo menos 6 caracteres')
+        return
+      }
+      if (form.nova_senha !== form.confirmar_senha) {
+        error('As senhas não coincidem')
+        return
+      }
     }
 
     loading.value = true
+
     try {
       const submitData: any = {
         nome: form.nome,
@@ -92,15 +97,16 @@ export function useProfileEdit() {
         body: JSON.stringify(submitData),
       })
       const data = await response.json()
+
       if (data.success) {
         localStorage.setItem('user', JSON.stringify(data.user))
-        alert('Perfil atualizado com sucesso!')
-        router.push('/profile')
+        success('Perfil atualizado com sucesso!')
+        setTimeout(() => router.push('/profile'), 1500)
       } else {
-        alert(data.message || 'Erro ao atualizar perfil')
+        error(data.message || 'Erro ao atualizar perfil')
       }
     } catch (err) {
-      alert('Erro de conexão com o servidor')
+      error('Erro de conexão com o servidor')
     } finally {
       loading.value = false
     }
@@ -117,8 +123,9 @@ export function useProfileEdit() {
     strengthClass,
     strengthText,
     strengthWidth,
+    phoneError,
     passwordsMatch,
-    formatTelefone,
+    handlePhoneInput,
     checkPasswordStrength,
     checkPasswordMatch,
     handleSubmit,

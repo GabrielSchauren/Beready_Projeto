@@ -1,0 +1,79 @@
+<template>
+  <div class="spinner-container" :class="{ 'spinner-fullscreen': fullscreen }">
+    <div class="spinner" :class="`spinner-${size}`">
+      <div class="spinner-circle"></div>
+    </div>
+    <p v-if="text" class="spinner-text">{{ text }}</p>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineProps({
+  size: {
+    type: String,
+    default: 'medium',
+    validator: (value: string) => ['small', 'medium', 'large'].includes(value),
+  },
+  text: {
+    type: String,
+    default: '',
+  },
+  fullscreen: {
+    type: Boolean,
+    default: false,
+  },
+})
+</script>
+
+<style scoped>
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.spinner-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 1000;
+}
+
+.spinner {
+  position: relative;
+}
+
+.spinner-small {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.spinner-medium {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.spinner-large {
+  width: 4rem;
+  height: 4rem;
+}
+
+.spinner-circle {
+  width: 100%;
+  height: 100%;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+</style>
